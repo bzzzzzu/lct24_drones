@@ -1,5 +1,8 @@
 from ultralytics import YOLO
 
-model = YOLO("yolov8s.pt")
+if __name__ == '__main__':
+    model = YOLO("yolov8s.pt")
+    model.info()
+    model.cuda()
 
-print(model)
+    results = model.train(data="drones.yaml", epochs=5, imgsz=640)
