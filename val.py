@@ -7,7 +7,8 @@ import os
 
 # n/s/m/l/x
 #model = YOLO("yolov8s.pt")
-model = YOLO("runs/detect/train6/weights/best.pt")
+#model = YOLO("runs/detect/train6/weights/best.pt")
+model = YOLO("runs/detect/train7/weights/best.pt")
 #model = YOLO("yolov10s.pt")
 model.cuda()
 
@@ -36,7 +37,7 @@ for val_image in val_image_list:
     else:
         img = Image.open(raw_name)
 
-    results = model(img, conf=0.1, imgsz=1280)
+    results = model(img, conf=0.1, imgsz=1024)
     for r in results:
         annotator = Annotator(img)
         boxes = r.boxes
