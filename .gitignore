@@ -1,0 +1,4 @@
+/web_service/results/*
+/web_service/YOLOv8_Efficient/run/*
+/model/*
+/ipynb_chekpoints/
