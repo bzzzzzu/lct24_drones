@@ -8,7 +8,8 @@ import os
 # n/s/m/l/x
 #model = YOLO("yolov8s.pt")
 #model = YOLO("runs/detect/train6/weights/best.pt")
-model = YOLO("runs/detect/train7/weights/best.pt")
+#model = YOLO("runs/detect/train7/weights/best.pt")
+model = YOLO("runs/detect/train8/weights/best.pt")
 #model = YOLO("yolov10s.pt")
 model.cuda()
 
