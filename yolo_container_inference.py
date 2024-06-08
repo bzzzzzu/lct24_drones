@@ -49,7 +49,7 @@ def main(source):
     yolo_inference = YoloContainerInference()
     results = yolo_inference.get_prediction(source)
 
-    if source == 0: # streaming mode
+    if source == 0:  # streaming mode
         for result in results:
             frame = result.orig_img
             boxes = result.boxes.xyxy.cpu().numpy()
