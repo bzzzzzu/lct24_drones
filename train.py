@@ -2,7 +2,7 @@ from ultralytics import YOLO
 from ultralytics.data.utils import autosplit
 
 if __name__ == '__main__':
-    model = YOLO("yolov8s.pt")
+    model = YOLO("utils/yolov8s.pt")
     model.info()
     model.cuda()
 
