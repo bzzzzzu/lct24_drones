@@ -24,6 +24,20 @@ def get_image_bboxes(list_of_files):
                     ann.box_label(box=box, color=(0, 0, 255), txt_color=(255, 255, 255), label=str.split(str.split(str.strip(l), ' ')[0], '.')[0])
                 ann.save(f'datasets/drones_clean/images_with_bbox/{f}')
 
+def get_folder_bboxes(folder, save_folder):
+    for f in os.listdir(folder):
+        img = Image.open(f'{folder}/{f}').convert("RGB")
+        ann = Annotator(img, font_size=16, line_width=1)
+        label_name = f"{'.'.join(str.split(f, '.')[:-1])}.txt"
+        with open(f'{str.replace(folder, "images", "labels")}/{label_name}', 'r') as label_f:
+            lines = label_f.readlines()
+            for l in lines:
+                box = np.array(str.split(str.strip(l), ' ')[1:]).astype('float64')
+                box = list(ops.xywhn2xyxy(box, img.width, img.height, 0, 0))
+                ann.box_label(box=box, color=(0, 0, 255), txt_color=(255, 255, 255),
+                              label=str.split(str.split(str.strip(l), ' ')[0], '.')[0])
+            ann.save(f'{save_folder}/{f}')
+
 def copy_image_labels(list_of_files):
     for f in list_of_files:
         label_name = f"{'.'.join(str.split(f, '.')[:-1])}.txt"
@@ -47,5 +61,6 @@ def filter_autosplit(list_of_files):
             if os.path.exists(f'datasets/drones_clean/images_with_bbox/{part}'):
                 filter_val.write(l)
 
-list_of_files = os.listdir('datasets/drones_clean/images/')
-filter_autosplit(list_of_files)
+#list_of_files = os.listdir('datasets/drones_clean/images/')
+#filter_autosplit(list_of_files)
+get_folder_bboxes('datasets/airborne/images', 'datasets/airborne/images_bbox')
