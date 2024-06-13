@@ -1,9 +1,9 @@
 # folders
-/triton_repo/*
-/flask_app/detects/*
-/flask_app/yolov8-Object-detection-web-application-flask/*
-/utils/*
-/utils/YOLOv8_Efficient/*
+dataset/*
+triton_repo/yolo/1/*
+utils/*
+web_app/detects/*
+web_app/uploads/*
 
 # files
 best.pt
