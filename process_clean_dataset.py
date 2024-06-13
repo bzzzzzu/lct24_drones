@@ -4,6 +4,7 @@ from PIL import Image
 from ultralytics.utils.plotting import Annotator
 import numpy as np
 import ultralytics.utils.ops as ops
+import json
 
 def get_image_list(list_of_files):
     with open('clean_list.txt', 'w', encoding='utf-8') as clf:
@@ -61,6 +62,33 @@ def filter_autosplit(list_of_files):
             if os.path.exists(f'datasets/drones_clean/images_with_bbox/{part}'):
                 filter_val.write(l)
 
+def convert_anylabeling_dir_to_yolo(source_json, source_image, dest, names):
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+        os.makedirs(f'{dest}images/')
+        os.makedirs(f'{dest}labels/')
+    for f in os.listdir(source_json):
+        if '.json' in f:
+            with open(f'{source_json}{f}', 'r') as jsf:
+                label = json.load(jsf)
+            image_name = label['imagePath']
+            label_name = f"{'.'.join(str.split(label['imagePath'], '.')[:-1])}.txt"
+            shutil.copy(f'{source_image}images/{image_name}', f'{dest}images/{image_name}')
+            with open(f'{dest}labels/{label_name}', 'w') as lbf:
+                for detect in label['shapes']:
+                    if detect['label'] in names:
+                        id = names[detect["label"]]
+                        x = (detect['points'][0][0] + detect['points'][1][0]) / 2 / label['imageWidth']
+                        y = (detect['points'][0][1] + detect['points'][1][1]) / 2 / label['imageHeight']
+                        w = (detect['points'][1][0] - detect['points'][0][0]) / label['imageWidth']
+                        h = (detect['points'][1][1] - detect['points'][0][1]) / label['imageHeight']
+                        yolo_line = f'{id} {x} {y} {w} {h}\n'
+                        lbf.write(yolo_line)
+
+
+
 #list_of_files = os.listdir('datasets/drones_clean/images/')
 #filter_autosplit(list_of_files)
-get_folder_bboxes('datasets/airborne/images', 'datasets/airborne/images_bbox')
+#get_folder_bboxes('datasets/airborne/images', 'datasets/airborne/images_bbox')
+#convert_anylabeling_dir_to_yolo('datasets/drones_clean/birds_relabel/', 'datasets/drones/', 'datasets/birds_fixed_labels/', {'copter': 0.0, 'plane': 1.0, 'heli': 2.0, 'bird': 3.0, 'winged': 4.0})
+get_folder_bboxes('datasets/birds_fixed_labels/images', 'datasets/birds_fixed_labels/images_bbox')
