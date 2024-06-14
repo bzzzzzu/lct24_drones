@@ -70,7 +70,7 @@ def save_val_bbox(path, dir):
 
 if __name__ == '__main__':
     #save_val_bbox('runs/detect/val10/predictions.json', 'relabel_val')
-    save_val_bbox('runs/detect/predict/labels/', 'relabel_fixed_birds_val')
+    save_val_bbox('runs/detect/predict2/labels/', 'relabel_fixed_birds_val_07')
     exit()
 
     # n/s/m/l/x
@@ -78,12 +78,13 @@ if __name__ == '__main__':
     #model = YOLO("runs/detect/train6/weights/best.pt")
     #model = YOLO("runs/detect/train7/weights/best.pt")
     #model = YOLO("runs/detect/train8/weights/best.pt")
-    model = YOLO("runs/detect/train19/weights/best.pt")
+    #model = YOLO("runs/detect/train19/weights/best.pt")
+    model = YOLO("runs/detect/train21/weights/best.pt")
 
     #model = YOLO("yolov10s.pt")
-    model.cuda()
-    model.predict('datasets/drones_clean/filter_val.txt', batch=16, imgsz=1024, conf=0.25, plots=True, save_json=True, save_txt=True, workers=4, agnostic_nms=True, save_conf=True)
-    exit()
+    #model.cuda()
+    #model.predict('datasets/drones_clean/filter_val.txt', batch=16, imgsz=1280, conf=0.25, plots=True, save_json=True, save_txt=True, workers=4, agnostic_nms=True, save_conf=True)
+    #exit()
 
     #print(model)
 

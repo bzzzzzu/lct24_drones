@@ -3,6 +3,9 @@ from ultralytics.data.utils import autosplit
 
 if __name__ == '__main__':
     # n/s/m/l/x
+    #model = YOLO('runs/detect/train21/weights/best.pt')
+    #model.export(format='onnx', dynamic=True, batch=16)
+    #exit()
     #model = YOLO("yolov8n.pt")
     #autosplit(path="datasets/drones_clean/images/", weights=(0.9, 0.1, 0.0))
 
@@ -105,3 +108,15 @@ if __name__ == '__main__':
     #heli      146        146      0.993      0.998      0.995      0.809
     #bird      67         67       0.941      0.761      0.821      0.371
     #winged    539        553      0.955      0.929      0.967      0.601
+
+    # sgd with fixed birds, 100 epoch, 1280 size
+    model = YOLO("yolov8s.pt")
+    model.info()
+    results = model.train(data="drones_clean_with_fixed_birds.yaml", device=0, epochs=100, close_mosaic=20, batch=-1, save_period=1, imgsz=1280, workers=10, plots=True, optimizer='SGD')
+    #Class     Images  Instances   Box(P          R      mAP50  mAP50-95):
+    #all       1630       1803     0.974       0.93       0.96        0.7
+    #copter    696        855      0.964      0.911       0.95      0.619
+    #plane     182        182      0.985      0.978      0.988      0.869
+    #heli      146        146      0.997          1      0.995      0.868
+    #bird      67         67       0.948       0.81      0.886      0.458
+    #winged    539        553      0.975      0.949      0.982      0.683
