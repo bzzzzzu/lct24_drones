@@ -24,7 +24,7 @@ class YoloModel:
         self.config = self._load_config(self.path_to_config)
         self.dataset_path: str = self.config["path"]
         self.class_names: Dict = self.config["names"]
-        self.imgsz = self.config.get("imgsz", 1024)
+        self.imgsz = self.config.get("imgsz", 1280)
         self.conf = self.config.get("conf", 0.25)
         self.iou = self.config.get("iou", 0.45)
         self.max_det = self.config.get("max_det", 1000)
@@ -69,7 +69,7 @@ class YoloModel:
 
         if device == 0 and self.device == 'cpu':
             device = 'cpu'
-            print('INFO: device ->', device)
+        print('INFO: device ->', device)
 
         results = self.model(
             source=source,
@@ -92,6 +92,8 @@ class YoloModel:
             stream_buffer=stream_buffer,
             save=save,
             show=show,
+            batch=4,
+            agnostic_nms=True,
         )
         return results
 

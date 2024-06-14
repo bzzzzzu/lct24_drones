@@ -4,9 +4,12 @@ triton_repo/yolo/1/*
 utils/*
 web_app/detects/*
 web_app/uploads/*
+.idea/
 
 # files
 best.pt
+best_0705.pt
+best_0619_fixed_birds.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
