@@ -18,7 +18,8 @@ WORKDIR = Path(__file__).parent.absolute()
 class YoloModel:
     def __init__(
             self,
-            model_path: str = f"http://triton:8000/yolo/",  # из контейнера
+            # model_path: str = f"http://triton:8000/yolo/",  # из контейнера
+            model_path: str = f"./best_0700_fixed_birds.pt",
             # model_path: str = f"http://localhost:8000/yolo/",  # из контейнера
             task: str = "detect",
             path_to_config: str = 'drones.yaml',
@@ -71,8 +72,8 @@ class YoloModel:
         show = self.show if show is None else show
         stream_buffer = self.stream_buffer if stream_buffer is None else stream_buffer
 
-        if device == 0 and self.device == 'cpu':
-            device = 'cpu'
+        #if device == 0 and self.device == 'cpu':
+        #    device = 'cpu'
         print('INFO: device ->', device)
 
         results = self.model(
@@ -96,7 +97,7 @@ class YoloModel:
             stream_buffer=stream_buffer,
             save=save,
             show=show,
-            batch=4,
+            batch=24,
             agnostic_nms=True,
         )
         return results

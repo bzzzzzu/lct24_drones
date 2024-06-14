@@ -18,7 +18,7 @@ services:
     volumes:
       - ./triton_repo:/models
     ports:
-      - "8000:8000"
+      - "8000-8002:8000-8002"
 #    env_file:
 #      - .env
 
@@ -29,6 +29,13 @@ services:
       dockerfile: ./docker/flask/Dockerfile
     networks:
       - default
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     volumes:
       - ./web_app:/web_app
     ports:
