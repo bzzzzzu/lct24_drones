@@ -1,5 +1,7 @@
 import math
 import os
+from datetime import datetime
+
 import yaml
 from pathlib import Path
 from typing import Union, Dict, List
@@ -8,6 +10,7 @@ from ultralytics import YOLO
 import cv2
 import torch
 from PIL import Image
+from werkzeug.utils import secure_filename
 
 WORKDIR = Path(__file__).parent.absolute()
 
@@ -15,9 +18,10 @@ WORKDIR = Path(__file__).parent.absolute()
 class YoloModel:
     def __init__(
             self,
-            model_path: str = f"http://localhost:8000/yolo/",  # из контейнера
+            model_path: str = f"http://triton:8000/yolo/",  # из контейнера
+            # model_path: str = f"http://localhost:8000/yolo/",  # из контейнера
             task: str = "detect",
-            path_to_config: str = '../drones.yaml',
+            path_to_config: str = 'drones.yaml',
     ):
         self.model = YOLO(model_path, task=task)
         self.path_to_config = path_to_config
@@ -104,18 +108,33 @@ class YoloModel:
                 return yaml.safe_load(f)
         raise FileNotFoundError
 
+
+    @staticmethod
+    def get_result_path(full_file_path):
+        filename = os.path.basename(full_file_path)
+        dirname, _ = os.path.splitext(filename)
+        return dirname
+
     def video_detection(self, path_x):
         print(f'DEBUG: {path_x=}')
         if path_x is None:
             raise ValueError
 
         if isinstance(path_x, str) and path_x.lower().endswith(('.png', '.jpg', '.jpeg')):
+            dirname = self.get_result_path(path_x)
+
             img = cv2.imread(path_x)
             if img is None:
                 print(f"Error: Unable to open image file {path_x}")
                 return
 
-            results = self.detect(source=path_x, stream=True, stream_buffer=True)
+            results = self.detect(
+                source=path_x,
+                stream=True,
+                stream_buffer=False,
+                project=f'./uploads/{dirname}/',
+                name='results'
+            )
             for result in results:
                 frame = result.orig_img
                 boxes = result.boxes.xyxy.cpu().numpy()
@@ -133,7 +152,42 @@ class YoloModel:
         # TODO: Добавить распаковку zip
         # TODO: добавить link и folder
         # FIXME: почему то очень большая задержка при live streaming если stream_buffer=True
-        else:
+        elif isinstance(path_x, str):
+            dirname = self.get_result_path(path_x)
+
+            cap = cv2.VideoCapture(path_x)
+            if not cap.isOpened():
+                print(f"Error: Unable to open video file {path_x}")
+                return
+
+            # results = self.detect(source=path_x, stream=True, stream_buffer=True)
+            results = self.detect(
+                source=path_x,
+                stream=True,
+                stream_buffer=True,
+                project=f'./uploads/{dirname}/',
+                name='results'
+            )
+
+            for result in results:
+                frame = result.orig_img
+                boxes = result.boxes.xyxy.cpu().numpy()
+                confidences = result.boxes.conf.cpu().numpy()
+                class_ids = result.boxes.cls.cpu().numpy().astype(int)
+
+                for box, score, class_id in zip(boxes, confidences, class_ids):
+                    x1, y1, x2, y2 = map(int, box)
+                    label = f"{self.class_names[class_id]}: {score:.2f}"
+                    color = (0, 255, 0)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                    cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                yield frame
+            cap.release()
+
+        elif isinstance(path_x, int) and path_x == 0:
+            current_datetime = datetime.now()
+            dirname = f'stream_{secure_filename(str(current_datetime))}'
+
             cap = cv2.VideoCapture(path_x)
             if not cap.isOpened():
                 print(f"Error: Unable to open video file {path_x}")
@@ -147,8 +201,13 @@ class YoloModel:
                 if not success:
                     break
 
-                # results = self.detect(source=path_x, stream=True, stream_buffer=True)
-                results = self.detect(source=path_x, stream=True)
+                results = self.detect(
+                    source=path_x,
+                    stream=True,
+                    stream_buffer=True,
+                    project=f'./uploads/{dirname}/',
+                    name='results'
+                )
 
                 for result in results:
                     frame = result.orig_img

@@ -1,0 +1,37 @@
+version: "3"
+services:
+  triton:
+    hostname: 'triton'
+    build:
+      context: .
+      dockerfile: ./docker/triton/Dockerfile
+    networks:
+      - default
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./triton_repo:/models
+    ports:
+      - "8000:8000"
+#    env_file:
+#      - .env
+
+  flask:
+    hostname: 'flask'
+    build:
+      context: .
+      dockerfile: ./docker/flask/Dockerfile
+    networks:
+      - default
+    volumes:
+      - ./web_app:/web_app
+    ports:
+      - "5000:5000"
+#    env_file:
+#      - .env

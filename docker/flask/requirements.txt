@@ -1,0 +1,6 @@
+flask
+flask_wtf
+pyyaml
+ultralytics
+tritonclient[all]
+# opencv-python

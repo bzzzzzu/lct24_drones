@@ -69,26 +69,37 @@
      <h1><strong>Output Video</strong></h1>
 </header>
 
-  <section class="col-sm " >
-          <img src="{{ url_for('video') }}"   alt="Upload video">
+<section class="col-sm">
+    {% if is_generated %}
+        <video autoplay="autoplay" controls="controls" preload="preload">
+            <source src="{{ url_for('video', filename=filename) }}" type="video/mp4"></source>
+        </video>
+    {% else %}
+        <img src="{{ url_for('video') }}" alt="Upload video">
+    {% endif %}
 
-  </section>
+</section>
 <section>
-    <div class="new" >
-      <form method = 'POST' enctype="multipart/form-data" style="align-content: center; text-align: center;display: flex;">
-        {{form.hidden_tag()}}
-        {{form.file(class_="custom-file-input")}}
+    <div class="new">
+        <form method='POST' enctype="multipart/form-data" style="align-content: center; text-align: center;display: flex;">
+            {{ form.hidden_tag() }}
+            {{ form.file(class_="custom-file-input") }}
 
-        <div>
-        <button type="submit" name="favorite" value="x" class="btnCustom">
-            Submit
-        </button>
-      </div>
-      </form>
+            <div>
+                <button type="submit" name="favorite" value="x" class="btnCustom">Submit</button>
+            </div>
+        </form>
     </div>
-
-  </div>
-    </section>
+</section>
+<section>
+    <div class="new">
+        <form method="POST" action="{{ url_for('save_results') }}" style="align-content: center; text-align: center;display: flex;">
+            <div>
+                <button type="submit" name="save" value="save" class="btnCustom">Save Results</button>
+            </div>
+        </form>
+    </div>
+</section>
 
 </body>
 </html>
