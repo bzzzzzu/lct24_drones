@@ -16,6 +16,8 @@ from PIL import Image
 from werkzeug.utils import secure_filename
 import tempfile
 
+from values import VIDEO_EXTENSIONS, IMG_EXTENSIONS
+
 WORKDIR = Path(__file__).parent.absolute()
 IS_DETECTED, LABELS_IN_PERIOD, SCORES_IN_PERIOD = False, [], []
 
@@ -90,6 +92,7 @@ class YoloModel:
             boxes = result.boxes.xyxy.cpu().numpy()
             confidences = result.boxes.conf.cpu().numpy()
             class_ids = result.boxes.cls.cpu().numpy().astype(int)
+            print('DEBUG', (timecode_artifacts))
 
             if timecode_artifacts is not None:
                 current_time = timecode_artifacts[1] if timecode_artifacts else 0
@@ -103,6 +106,7 @@ class YoloModel:
                 else:
                     if IS_DETECTED and (current_time - DETECTION_START_TIME) > 1:
                         # Запись данных, только если 1 секунд прошло без детекции
+                        print('DEBUG', (IS_DETECTED and (current_time - DETECTION_START_TIME) > 1))
                         self.save_timecodes(timecode_artifacts, DETECTION_START_TIME, current_time, LABELS_IN_PERIOD,
                                             SCORES_IN_PERIOD)
                         IS_DETECTED, LABELS_IN_PERIOD, SCORES_IN_PERIOD, DETECTION_START_TIME = False, [], [], None
@@ -119,20 +123,22 @@ class YoloModel:
 
     def video_detection(self, path_x, current_datetime=None):
         """Метод детекции в зависимости от типа файла/папки/ссылки."""
+        print(f'DEBUG: {path_x=}')
 
         if isinstance(path_x, str):
             filename = os.path.basename(path_x)
             dirname, _ = os.path.splitext(filename)
 
             # image
-            if path_x.lower().endswith(('.png', '.jpg', '.jpeg')):
+            if path_x.lower().endswith(IMG_EXTENSIONS):
                 results = self.detect(source=path_x, stream=True, stream_buffer=False,
                                       project=f'./uploads/{dirname}/', name='results')
                 for frame in results:
                     yield self.process_frame(frame.orig_img, [frame])
 
             # video
-            elif path_x.lower().endswith(('.mp4', '.avi')):
+            elif path_x.lower().endswith(VIDEO_EXTENSIONS):
+                print(f'DEBUG: {filename=}, {dirname=}')
                 with tempfile.TemporaryDirectory() as temp_dir:
                     temp_output_path = os.path.join(temp_dir, filename)
 
@@ -178,13 +184,64 @@ class YoloModel:
                     final_output_path = os.path.join(new_dir, filename)
                     shutil.move(temp_output_path, final_output_path)
 
+
             # link
             elif 'http' in path_x:
                 pass
 
             # folder
             else:
-                pass
+                print("DEBUG")
+                if os.path.isdir(path_x):
+                    for filename in os.listdir(path_x):
+                        path_to_file = os.path.join(path_x, filename)
+                        print(f'DEBUG: {filename=}, {dirname=}')
+                        with tempfile.TemporaryDirectory() as temp_dir:
+                            temp_output_path = os.path.join(temp_dir, filename)
+
+
+                            cap = cv2.VideoCapture(path_to_file)
+                            if not cap.isOpened():
+                                print(f"Error: Unable to open video file {path_to_file}")
+                                return
+
+                            fps = cap.get(cv2.CAP_PROP_FPS)
+                            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                            fourcc = cv2.VideoWriter_fourcc(*'H264')  # Кодек для MP4
+
+                            out = cv2.VideoWriter(temp_output_path, fourcc, fps, (width, height))
+                            results = self.detect(source=path_to_file, stream=True, stream_buffer=False,
+                                                  save=False, save_txt=True, save_conf=True,
+                                                  project=f'./uploads/{dirname}/',
+                                                  name='results')
+
+                            frame_cnt = 0
+                            for result in results:
+                                ret, frame = cap.read()
+                                if not ret:
+                                    break
+
+                                frame_cnt += 1
+                                current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                                timecode_artifacts = [frame_cnt, current_time, dirname]
+
+                                processed_frame = self.process_frame(frame, [result], timecode_artifacts)
+                                out.write(processed_frame)
+
+                                yield processed_frame
+
+                            # Освобождаем ресурсы
+                            cap.release()
+                            out.release()
+                            cv2.destroyAllWindows()
+
+                            # Перемещаем временное видео в папку results
+                            new_dir = os.path.join('./uploads', dirname, 'results')
+                            os.makedirs(new_dir, exist_ok=True)
+                            final_output_path = os.path.join(new_dir, filename)
+                            shutil.move(temp_output_path, final_output_path)
+
 
         # stream
         # 172.21.0.1 - - [14/Jun/2024 23:35:00] "GET /webcam HTTP/1.1" 200 -

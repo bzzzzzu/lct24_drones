@@ -109,139 +109,174 @@
 </section>
 <section>
     <div class="new">
-        <form method='POST' enctype="multipart/form-data" style="align-content: center; text-align: center;display: flex;">
-            {{ form.hidden_tag() }}
-            {{ form.file(class_="custom-file-input") }}
+      <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
 
-            <div>
-                <button type="submit" name="favorite" value="x" class="btnCustom">Submit</button>
-            </div>
-        </form>
+        <div class="form-group">
+          <button type="button" id="selectFolderBtn" class="btn btn-primary">Выберите папку</button>
+            или
+          <button type="button" id="selectFilesBtn" class="btn btn-secondary">Выберите файлы</button>
+        </div>
+
+        <div class="form-group">
+          <input type="file" id="fileFolderInput" name="file_folder" class="hidden-input" hidden="hidden">
+          {% for error in form.file_folder.errors %}
+            <span style="color: yellow;">[{{ error }}]</span>
+          {% endfor %}
+        </div>
+
+        <div class="form-group" id="ChoosedFiles" hidden="hidden">
+          <label for="selectedFiles">Выбранные файлы:</label>
+          <ul id="selectedFiles"></ul>
+        </div>
+
+        <div class="form-group" id="SubmitFormBtn" hidden="hidden">
+          {{ form.submit(class="btn btn-primary") }}
+        </div>
+      </form>
     </div>
 </section>
 <section>
     <div class="new">
         <form method="POST" action="{{ url_for('save_results') }}" style="align-content: center; text-align: center;display: flex;">
             <div>
-                <button type="submit" name="save" value="save" class="btnCustom">Save Results</button>
+                <button type="submit" name="save" id="saveBtn" value="save" hidden="hidden" class="btnCustom">Скачать результаты</button>
             </div>
         </form>
     </div>
 </section>
+    <script>
+      document.getElementById('selectFolderBtn').addEventListener('click', function() {
+        let input = document.getElementById('fileFolderInput');
+        input.removeAttribute('multiple');
+        input.setAttribute('webkitdirectory', 'webkitdirectory');
+        input.click();
+      });
 
+      document.getElementById('selectFilesBtn').addEventListener('click', function() {
+        let input = document.getElementById('fileFolderInput');
+        input.removeAttribute('webkitdirectory');
+        input.setAttribute('multiple', 'multiple');
+        input.click();
+      });
+
+      document.getElementById('fileFolderInput').addEventListener('change', function(event) {
+        let input = event.target;
+        let fileList = input.files;
+        let selectedFilesList = document.getElementById('selectedFiles');
+        selectedFilesList.innerHTML = '';
+
+        for (let i = 0; i < fileList.length; i++) {
+          let li = document.createElement('li');
+          li.textContent = fileList[i].name;
+          selectedFilesList.appendChild(li);
+        }
+
+        // Enable the submit button if files are selected
+        if (fileList.length > 0) {
+          document.getElementById('SubmitFormBtn').removeAttribute('hidden');
+          document.getElementById('ChoosedFiles').removeAttribute('hidden');
+        } else {
+          document.getElementById('SubmitFormBtn').setAttribute('hidden', 'hidden');
+          document.getElementById('ChoosedFiles').setAttribute('hidden', 'hidden');
+        }
+      });
+    </script>
 <script>
     $(document).ready(function() {
             function checkVideoStatus() {
-                $.getJSON('/check_video_status', function(data) {
+                $.getJSON('/check_status', function(data) {
                     if (data.status === 'ready') {
-                        var videoSection = $('#video-section');
-                        videoSection.empty();
-                        videoSection.append('<video id="my-video" class="video-js vjs-default-skin" controls preload="auto" width="1000" height="650">' +
-                                            '<source src="/video/' + encodeURIComponent(data.result_file_path) + '" type="video/mp4">' +
-                                            '</video>');
+                        document.getElementById("saveBtn").removeAttribute('hidden');
+                        if (data.type === 'video'){
+                            var videoSection = $('#video-section');
+                            videoSection.empty();
+                            videoSection.append('<video id="my-video" class="video-js vjs-default-skin" controls preload="auto" width="1000" height="650">' +
+                                                '<source src="/video/' + encodeURIComponent(data.result_file_path) + '" type="video/mp4">' +
+                                                '</video>');
 
-                        var player = videojs('my-video');
+                            var player = videojs('my-video');
 
-                        async function getTimecodes() {
-                            try {
-                                const response = await fetch('/timecodes/' + encodeURIComponent(data.result_file_path), {
-                                    method: 'GET', // Метод запроса
-                                    headers: {
-                                        'Content-Type': 'application/json' // Установка типа содержимого
+                            async function getTimecodes() {
+                                try {
+                                    const response = await fetch('/timecodes/' + encodeURIComponent(data.result_file_path), {
+                                        method: 'GET', // Метод запроса
+                                        headers: {
+                                            'Content-Type': 'application/json' // Установка типа содержимого
+                                        }
+                                    });
+
+                                    // Проверка успешности ответа
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP error! Status: ${response.status}`);
                                     }
+
+                                    // Преобразование ответа в JSON
+                                    const timecodes = await response.json();
+
+                                    // Логирование полученных таймкодов
+                                    console.log('Received timecodes:', timecodes);
+                                    return timecodes;
+                                } catch (error) {
+                                    console.error('Error fetching timecodes:', error);
+                                }
+                            }
+
+                            // Вызов функции для получения таймкодов
+                            var timecodes;
+
+                            function createTimecode(timecode) {
+                                var timecodeElem = document.createElement('div');
+                                timecodeElem.classList.add('timecode');
+                                timecodeElem.classList.add('flag');
+
+                                var startPercent = (timecode.start_time / player.duration()) * 100;
+                                var endPercent = (timecode.end_time / player.duration()) * 100;
+                                timecodeElem.style.left = startPercent + '%';
+                                timecodeElem.style.width = (endPercent - startPercent) + '%';
+
+                                // Обработчик клика на таймкод
+                                timecodeElem.addEventListener('click', function(event) {
+                                    player.currentTime(timecode.start_time);
                                 });
 
-                                // Проверка успешности ответа
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! Status: ${response.status}`);
+                                return timecodeElem;
+                            }
+
+                            // Функция для закраски прогресс-бара в соответствии с таймкодами
+                            function colorizeProgressBar() {
+                                var progressBar = player.controlBar.progressControl.seekBar.el();
+
+                                // Очистка предыдущих таймкодов
+                                var existingTimecodes = progressBar.querySelectorAll('.timecode');
+                                existingTimecodes.forEach(function(timecode) {
+                                    timecode.remove();
+                                });
+
+                                // Создание таймкодов на прогресс-баре
+                                for (var i = 0; i < timecodes.length; i++) {
+                                    var timecode = timecodes[i];
+                                    console.log(timecode);
+                                    var timecodeElem = createTimecode(timecode);
+                                    timecodeElem.dataset.timeStart = timecode.start_time; // Сохраняем время начала таймкода в data-атрибуте
+                                    progressBar.appendChild(timecodeElem);
                                 }
-
-                                // Преобразование ответа в JSON
-                                const timecodes = await response.json();
-
-                                // Логирование полученных таймкодов
-                                console.log('Received timecodes:', timecodes);
-                                return timecodes;
-                            } catch (error) {
-                                console.error('Error fetching timecodes:', error);
                             }
+
+                            player.on('loadedmetadata', async function() {
+                                 timecodes = await getTimecodes();
+                                 colorizeProgressBar();
+                           });
+                        }
+                        else if (data.type === 'image'){
+
+                            var videoSection = $('#video-section');
+                            videoSection.empty();
+                            videoSection.append('<img src="/image/' + encodeURIComponent(data.result_file_path) + '" alt="Upload video">');
                         }
 
-                        // Вызов функции для получения таймкодов
-                        var timecodes;
-
-                        function createTimecode(timecode) {
-                            var timecodeElem = document.createElement('div');
-                            timecodeElem.classList.add('timecode');
-                            timecodeElem.classList.add('flag');
-
-                            var startPercent = (timecode.start_time / player.duration()) * 100;
-                            var endPercent = (timecode.end_time / player.duration()) * 100;
-                            timecodeElem.style.left = startPercent + '%';
-                            timecodeElem.style.width = (endPercent - startPercent) + '%';
-
-                            // Обработчик клика на таймкод
-                            timecodeElem.addEventListener('click', function(event) {
-                                player.currentTime(timecode.start_time);
-                            });
-
-                            return timecodeElem;
-                        }
-
-                        // Функция для закраски прогресс-бара в соответствии с таймкодами
-                        function colorizeProgressBar() {
-                            var progressBar = player.controlBar.progressControl.seekBar.el();
-
-                            // Очистка предыдущих таймкодов
-                            var existingTimecodes = progressBar.querySelectorAll('.timecode');
-                            existingTimecodes.forEach(function(timecode) {
-                                timecode.remove();
-                            });
-
-                            // Создание таймкодов на прогресс-баре
-                            for (var i = 0; i < timecodes.length; i++) {
-                                var timecode = timecodes[i];
-                                console.log(timecode);
-                                var timecodeElem = createTimecode(timecode);
-                                timecodeElem.dataset.timeStart = timecode.start_time; // Сохраняем время начала таймкода в data-атрибуте
-                                progressBar.appendChild(timecodeElem);
-                            }
-                        }
-
-                        player.on('loadedmetadata', async function() {
-                             timecodes = await getTimecodes();
-                             colorizeProgressBar();
-                       });
-
-
-
-        {#                    // Обработчик клика на прогресс-бар#}
-        {#                    player.controlBar.progressControl.el().addEventListener('click', function(event) {#}
-        {#                        var progressBar = player.controlBar.progressControl.seekBar.el();#}
-        {#                        var progressBarRect = progressBar.getBoundingClientRect();#}
-        {#                        var clickPosition = event.clientX - progressBarRect.left;#}
-        {##}
-        {#                        // Поиск таймкода, соответствующего позиции клика#}
-        {#                        var timecodeElems = progressBar.querySelectorAll('.timecode');#}
-        {#                        var selectedTimecode = null;#}
-        {##}
-        {#                        for (var i = 0; i < timecodeElems.length-1; i++) {#}
-        {#                            var timecodeElem = timecodeElems[i];#}
-        {#                            var timecodeRect = timecodeElem.getBoundingClientRect();#}
-        {#                            console.log(timecodeRect)#}
-        {##}
-        {#                            if (clickPosition >= timecodeRect.left && clickPosition < timecodeRect.right) {#}
-        {#                                selectedTimecode = timecodeElem;#}
-        {#                                break;#}
-        {#                            }#}
-        {#    }#}
-        {##}
-        {#    if (selectedTimecode) {#}
-        {#        var timeStart = parseFloat(selectedTimecode.dataset.timeStart);#}
-        {#        player.currentTime(timeStart);#}
-        {#    }#}
-        {#});#}
                     } else {
+                        document.getElementById("saveBtn").setAttribute('hidden', 'hidden');
                         setTimeout(checkVideoStatus, 1000);  // Check status every second
                     }
                 }).fail(function() {
