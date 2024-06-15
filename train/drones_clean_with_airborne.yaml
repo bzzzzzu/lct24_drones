@@ -8,9 +8,11 @@
 #     └── coco8  ← downloads here (1 MB)
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: ../datasets/drones_clean/ # dataset root dir
-train: autosplit_train.txt # train images (relative to 'path')
-val: autosplit_val.txt # val images (relative to 'path')
+path: ../datasets/ # dataset root dir
+train:
+ - drones_clean/filter_train.txt # train images (relative to 'path')
+ - airborne/images/
+val: drones_clean/filter_val.txt # val images (relative to 'path')
 test: # test images (optional)
 
 # Classes

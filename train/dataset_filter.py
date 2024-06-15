@@ -4,6 +4,10 @@ import shutil
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Объекты больше чем 10% кадра как правило или уже упали на объект или какие-то вообще левые картинки;
+# Возможно будет немного хуже по метрикам, но должно более точно соответствовать задаче;
+# Код использовался как часть чистки датасета
+
 labels_size = [0] * 100
 
 for f in os.listdir('datasets/drones/labels'):
@@ -19,10 +23,7 @@ for f in os.listdir('datasets/drones/labels'):
                     shutil.copy(f'datasets/drones/images/{str.split(f, ".txt")[0]}.jpg', f'datasets/drones_clean/images/{str.split(f, ".txt")[0]}.jpg')
                 if os.path.exists(f'datasets/drones/images/{str.split(f, ".txt")[0]}.png'):
                     shutil.copy(f'datasets/drones/images/{str.split(f, ".txt")[0]}.png', f'datasets/drones_clean/images/{str.split(f, ".txt")[0]}.png')
-            #print(max_size*100)
             labels_size[int(max_size*100-0.000001)] = labels_size[int(max_size*100-0.000001)] + 1
-            #if len(f) == 36:
-            #    print(f)
 
 plt.plot(np.arange(len(labels_size)), labels_size)
 plt.ylim([0, np.max(labels_size) + 100])

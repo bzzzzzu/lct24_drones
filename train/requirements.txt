@@ -1,0 +1,9 @@
+# список, возможно, неполный, но ultralytics умеет подтягивать зависимости на лету, поэтому полный список достать проблематично
+ultralytics
+requests
+numpy
+# версия торча зависит от установленной куды на сервере, возможно придется поменять на другую из https://pytorch.org/get-started/locally/
+--find-links https://download.pytorch.org/whl/cu121
+torch==2.3.0+cu121
+torchvision==0.18.0+cu121
+torchaudio==2.3.0
