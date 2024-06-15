@@ -4,6 +4,7 @@ from typing import List
 
 from flask import Flask, render_template, Response, jsonify, request, session, send_file
 from flask_wtf import FlaskForm
+# from flask_session import Session
 from wtforms import MultipleFileField, SubmitField
 from werkzeug.utils import secure_filename
 from wtforms.fields.simple import StringField, FileField
@@ -20,6 +21,9 @@ import tempfile
 
 app = Flask(__name__)
 local_yolo = YoloModel()
+# app.config["SESSION_PERMANENT"] = False
+# app.config["SESSION_TYPE"] = "filesystem"
+# Session(app)
 
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -61,8 +65,9 @@ def webcam():
 def front():
     form = FileFolderForm()
 
-    def process_file(file, folder=None):
-        filename = secure_filename(file.filename)
+    def process_file(file=None, filename=None, folder=None):
+        if not filename:
+            filename = secure_filename(file.filename)
         if folder:
             filename = filename.replace(folder + "_", "")
         full_filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -72,9 +77,11 @@ def front():
         os.makedirs(full_dirpath, exist_ok=True)
         os.makedirs(os.path.join(full_dirpath, 'original'), exist_ok=True)
         save_path = os.path.join(full_dirpath, 'original', filename)
-        print(save_path, not os.path.exists(save_path))
         if not os.path.exists(save_path):
-            file.save(save_path)
+            if file:
+                file.save(save_path)
+            else:
+                shutil.move(os.path.join(folder, filename), save_path)
             if not session.get('video_paths', None):
                 session['video_paths'] = []
             session['video_paths'].append(save_path)
@@ -99,7 +106,15 @@ def front():
         if file_folder_data and len(file_folder_data) > 1:
             for file in file_folder_data:
                 folder = "_".join(file.filename.split('/')[:-1])
-                process_file(file, folder)
+                process_file(file=file, folder=folder)
+        elif file_folder_data[0].filename.endswith(".zip"):
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                archive_tmp_path = os.path.join(tmp_dir, secure_filename(file_folder_data[0].filename))
+                file_folder_data[0].save(archive_tmp_path)
+                tmp_archive_dir = os.path.join(tmp_dir, 'archive')
+                shutil.unpack_archive(archive_tmp_path, tmp_archive_dir)
+                for filename in os.listdir(tmp_archive_dir):
+                    process_file(filename=filename, folder=tmp_archive_dir)
         else:
             process_file(file_folder_data[0])
 
