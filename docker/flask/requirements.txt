@@ -3,4 +3,5 @@ flask_wtf
 pyyaml
 ultralytics
 tritonclient[all]
+flask-socketio
 # opencv-python
