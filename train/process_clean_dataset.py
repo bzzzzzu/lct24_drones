@@ -8,6 +8,8 @@ import json
 from threading import Thread
 import time
 
+# Различные мелкие скрипты для разметки/проверки/управления датасетами
+
 def get_image_list(list_of_files):
     with open('clean_list.txt', 'w', encoding='utf-8') as clf:
         for l in list_of_files:
@@ -113,7 +115,6 @@ def convert_anylabeling_dir_to_yolo(source_json, source_image, dest, names):
                         h = (detect['points'][1][1] - detect['points'][0][1]) / label['imageHeight']
                         yolo_line = f'{id} {x} {y} {w} {h}\n'
                         lbf.write(yolo_line)
-
 
 
 #list_of_files = os.listdir('datasets/drones_clean/images/')
