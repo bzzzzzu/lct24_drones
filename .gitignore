@@ -4,6 +4,7 @@ triton_repo/yolo/1/*
 utils/*
 web_app/detects/*
 web_app/uploads/*
+web_app/flask_session/*
 .idea/
 
 # files

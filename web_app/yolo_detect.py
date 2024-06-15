@@ -20,6 +20,13 @@ from values import VIDEO_EXTENSIONS, IMG_EXTENSIONS
 
 WORKDIR = Path(__file__).parent.absolute()
 IS_DETECTED, LABELS_IN_PERIOD, SCORES_IN_PERIOD = False, [], []
+CLASS_NAMES = {
+    0: "copter",
+    1: "plane",
+    2: "heli",
+    3: "bird",
+    4: "winged",
+}
 
 class YoloModel:
     def __init__(
@@ -32,8 +39,7 @@ class YoloModel:
         self.model = YOLO(model_path, task=task)
         self.path_to_config = path_to_config
         self.config = self._load_config(path_to_config)
-        self.dataset_path: str = self.config["path"]
-        self.class_names: Dict = self.config["names"]
+        self.class_names: Dict = self.config["names"] if self.config is not None else CLASS_NAMES
         self.imgsz = 1280
         self.conf = 0.25
         self.iou = 0.45
@@ -43,10 +49,8 @@ class YoloModel:
         self.show_labels = True
         self.show_conf = True
 
-        self.classes = list(self.class_names.keys()) if self.class_names is not None else [0, 1, 2, 3, 4]
-        self.class_names_list = list(self.class_names.values()) if self.class_names is not None else ["copter", "plane",
-                                                                                                      "heli", "bird",
-                                                                                                      "winged"]
+        self.classes = list(self.class_names.keys())
+        self.class_names_list = list(self.class_names.values())
         self.device = 0 if torch.cuda.is_available() else 'cpu'
 
         print("\nINFO: model=", self.model.model_name)
@@ -92,7 +96,6 @@ class YoloModel:
             boxes = result.boxes.xyxy.cpu().numpy()
             confidences = result.boxes.conf.cpu().numpy()
             class_ids = result.boxes.cls.cpu().numpy().astype(int)
-            print('DEBUG', (timecode_artifacts))
 
             if timecode_artifacts is not None:
                 current_time = timecode_artifacts[1] if timecode_artifacts else 0
@@ -106,7 +109,6 @@ class YoloModel:
                 else:
                     if IS_DETECTED and (current_time - DETECTION_START_TIME) > 1:
                         # Запись данных, только если 1 секунд прошло без детекции
-                        print('DEBUG', (IS_DETECTED and (current_time - DETECTION_START_TIME) > 1))
                         self.save_timecodes(timecode_artifacts, DETECTION_START_TIME, current_time, LABELS_IN_PERIOD,
                                             SCORES_IN_PERIOD)
                         IS_DETECTED, LABELS_IN_PERIOD, SCORES_IN_PERIOD, DETECTION_START_TIME = False, [], [], None
@@ -123,7 +125,6 @@ class YoloModel:
 
     def video_detection(self, path_x, current_datetime=None):
         """Метод детекции в зависимости от типа файла/папки/ссылки."""
-        print(f'DEBUG: {path_x=}')
 
         if isinstance(path_x, str):
             filename = os.path.basename(path_x)
@@ -138,7 +139,6 @@ class YoloModel:
 
             # video
             elif path_x.lower().endswith(VIDEO_EXTENSIONS):
-                print(f'DEBUG: {filename=}, {dirname=}')
                 with tempfile.TemporaryDirectory() as temp_dir:
                     temp_output_path = os.path.join(temp_dir, filename)
 
@@ -191,11 +191,9 @@ class YoloModel:
 
             # folder
             else:
-                print("DEBUG")
                 if os.path.isdir(path_x):
                     for filename in os.listdir(path_x):
                         path_to_file = os.path.join(path_x, filename)
-                        print(f'DEBUG: {filename=}, {dirname=}')
                         with tempfile.TemporaryDirectory() as temp_dir:
                             temp_output_path = os.path.join(temp_dir, filename)
 

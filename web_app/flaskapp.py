@@ -4,7 +4,7 @@ from typing import List
 
 from flask import Flask, render_template, Response, jsonify, request, session, send_file
 from flask_wtf import FlaskForm
-# from flask_session import Session
+from flask_session import Session
 from wtforms import MultipleFileField, SubmitField
 from werkzeug.utils import secure_filename
 from wtforms.fields.simple import StringField, FileField
@@ -21,9 +21,9 @@ import tempfile
 
 app = Flask(__name__)
 local_yolo = YoloModel()
-# app.config["SESSION_PERMANENT"] = False
-# app.config["SESSION_TYPE"] = "filesystem"
-# Session(app)
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -36,7 +36,7 @@ class FileFolderForm(FlaskForm):
 
 
 def generate_frames(path_x: List[str]):
-    print(f'DEBUG: {path_x=}')
+    print(f'INFO: {path_x=}')
     current_datetime = str(datetime.now())
     for path_ in path_x:
         yolo_output = local_yolo.video_detection(path_, current_datetime)  # return generator
