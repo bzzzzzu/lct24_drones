@@ -124,7 +124,6 @@ def front():
 @app.route('/frames')
 def frames():
     video_paths = session.get('video_paths', None)
-    print(f"{video_paths=}")
 
     if video_paths:
         frame = generate_frames(video_paths)
@@ -146,7 +145,6 @@ def timecodes(result_file_path):
 @app.route('/check_status')
 def check_status():
     result_file_path = session.get('result_file_path', None)
-    print(f"{result_file_path=}")
 
     if result_file_path and result_file_path.endswith(VIDEO_EXTENSIONS):
         timecode_file_path = result_file_path.replace('/results/', '/timecodes/')
@@ -163,7 +161,6 @@ def check_status():
 @app.route('/video/<path:result_file_path>')
 def video(result_file_path):
     if result_file_path and os.path.exists(result_file_path):
-        print("result_file_path", result_file_path)
         return send_file(result_file_path, mimetype='video/mp4')
     return jsonify({"error": "No video found"}), 404
 

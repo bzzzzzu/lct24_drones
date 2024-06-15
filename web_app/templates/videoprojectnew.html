@@ -66,10 +66,13 @@
             border-right: 2px solid black;
             box-sizing: border-box;
         }
-        .timecode.no-flag {
-            background-color: gray;
+        .timecode.red {
+            background-color: red;
         }
-        .timecode.flag {
+        .timecode.green {
+            background-color: green;
+        }
+        .timecode.yellow {
             background-color: yellow;
         }
 
@@ -228,7 +231,7 @@
                             function createTimecode(timecode) {
                                 var timecodeElem = document.createElement('div');
                                 timecodeElem.classList.add('timecode');
-                                timecodeElem.classList.add('flag');
+                                timecodeElem.classList.add(timecode.color);
 
                                 var startPercent = (timecode.start_time / player.duration()) * 100;
                                 var endPercent = (timecode.end_time / player.duration()) * 100;

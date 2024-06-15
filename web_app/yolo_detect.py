@@ -4,6 +4,7 @@ import os
 import shutil
 import time
 from datetime import datetime
+from collections import Counter
 
 import yaml
 from pathlib import Path
@@ -18,8 +19,9 @@ import tempfile
 
 from values import VIDEO_EXTENSIONS, IMG_EXTENSIONS
 
+
 WORKDIR = Path(__file__).parent.absolute()
-IS_DETECTED, LABELS_IN_PERIOD, SCORES_IN_PERIOD = False, [], []
+TIMEPOINTS = []
 CLASS_NAMES = {
     0: "copter",
     1: "plane",
@@ -27,6 +29,10 @@ CLASS_NAMES = {
     3: "bird",
     4: "winged",
 }
+BPLA = ["copter", "winged"]
+BIRD = ["bird"]
+LA = ["plane", "heli"]
+
 
 class YoloModel:
     def __init__(
@@ -86,11 +92,62 @@ class YoloModel:
         if os.path.exists(filepath):
             with open(filepath, 'r') as f:
                 return yaml.safe_load(f)
-        raise FileNotFoundError
+        return None
+
+    @staticmethod
+    def process_timecodes(timecodes, min_interval=0.6, merge_gap=0.02):
+
+        def get_most_common_label(labels):
+            if not labels:
+                return None
+            counter = Counter(labels)
+            return counter.most_common(1)[0][0]
+        results = []
+        start_time = None
+        end_time = None
+        current_labels = []
+        last_detection_time = None
+
+        for entry in timecodes:
+            if entry['labels']:
+                if start_time is None:
+                    start_time = entry['time']
+                end_time = entry['time']
+                last_detection_time = entry['time']
+                current_labels.extend(entry['labels'])
+            elif start_time is not None:
+                if entry['time'] - last_detection_time <= merge_gap:
+                    end_time = entry['time']
+                else:
+                    if end_time - start_time >= min_interval:
+                        most_common_label = get_most_common_label(current_labels)
+                        if most_common_label:
+
+                            results.append({
+                                'start_time': start_time,
+                                'end_time': end_time,
+                                "color": "red" if most_common_label in BPLA else "green" if most_common_label in BIRD else "yellow" if most_common_label in LA else "gray",
+                            })
+                    start_time = None
+                    end_time = None
+                    current_labels = []
+                    last_detection_time = None
+
+        # Final check for the last interval if the loop ends while still in an interval
+        if start_time is not None and (end_time - start_time >= min_interval):
+            most_common_label = get_most_common_label(current_labels)
+            if most_common_label:
+                results.append({
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    "color": "red" if most_common_label in BPLA else "green" if most_common_label in BIRD else "yellow" if most_common_label in LA else "gray",
+                })
+
+        return results
 
     def process_frame(self, frame, results, timecode_artifacts=None):
         """Метод отрисовки bboxes, labels, conf на каждом frame."""
-        global IS_DETECTED, LABELS_IN_PERIOD, SCORES_IN_PERIOD, DETECTION_START_TIME
+        global TIMEPOINTS
 
         for result in results:
             boxes = result.boxes.xyxy.cpu().numpy()
@@ -99,19 +156,10 @@ class YoloModel:
 
             if timecode_artifacts is not None:
                 current_time = timecode_artifacts[1] if timecode_artifacts else 0
-
-                if class_ids.size > 0:
-                    if not IS_DETECTED:
-                        DETECTION_START_TIME = current_time  # Сохранение времени первой детекции
-                    IS_DETECTED = True
-                    LABELS_IN_PERIOD.extend([self.class_names[i] for i in class_ids])
-                    SCORES_IN_PERIOD.extend([float(score) for score in confidences.tolist()])
-                else:
-                    if IS_DETECTED and (current_time - DETECTION_START_TIME) > 1:
-                        # Запись данных, только если 1 секунд прошло без детекции
-                        self.save_timecodes(timecode_artifacts, DETECTION_START_TIME, current_time, LABELS_IN_PERIOD,
-                                            SCORES_IN_PERIOD)
-                        IS_DETECTED, LABELS_IN_PERIOD, SCORES_IN_PERIOD, DETECTION_START_TIME = False, [], [], None
+                TIMEPOINTS.append({
+                    'time': current_time,
+                    'labels': [self.class_names[cls_id] for cls_id in class_ids]
+                })
 
             for box, score, class_id in zip(boxes, confidences, class_ids):
                 x1, y1, x2, y2 = map(int, box)
@@ -125,6 +173,8 @@ class YoloModel:
 
     def video_detection(self, path_x, current_datetime=None):
         """Метод детекции в зависимости от типа файла/папки/ссылки."""
+        global TIMEPOINTS
+        print(f'INFO: {path_x=}')
 
         if isinstance(path_x, str):
             filename = os.path.basename(path_x)
@@ -177,6 +227,10 @@ class YoloModel:
                     cap.release()
                     out.release()
                     cv2.destroyAllWindows()
+                    timecodes = self.process_timecodes(TIMEPOINTS)
+                    self.save_timecodes(timecodes, dirname)
+
+                    TIMEPOINTS = []
 
                     # Перемещаем временное видео в папку results
                     new_dir = os.path.join('./uploads', dirname, 'results')
@@ -233,6 +287,7 @@ class YoloModel:
                             cap.release()
                             out.release()
                             cv2.destroyAllWindows()
+                            TIMEPOINTS = []
 
                             # Перемещаем временное видео в папку results
                             new_dir = os.path.join('./uploads', dirname, 'results')
@@ -277,32 +332,12 @@ class YoloModel:
             raise ValueError(f'Source {path_x} is not supported.')
 
     @staticmethod
-    def save_timecodes(timecode_artifacts, start_time, end_time, LABELS_IN_PERIOD, SCORES_IN_PERIOD):
+    def save_timecodes(timecodes, dirname):
         """Метод для записи временных меток, меток классов в JSON файл."""
 
-        ### timecode_artifacts: [frame_cnt, current_time, dirname]
-
-        timecodes_dir = os.path.join('uploads', timecode_artifacts[2], 'timecodes')
+        timecodes_dir = os.path.join('uploads', dirname, 'timecodes')
         os.makedirs(timecodes_dir, exist_ok=True)
-        timecodes_file = os.path.join(timecodes_dir, f'{timecode_artifacts[2]}.json')
+        timecodes_file = os.path.join(timecodes_dir, f'{dirname}.json')
 
-        data = {
-            "start_time": start_time,
-            "end_time": end_time,
-            "labels": LABELS_IN_PERIOD,
-            "scores": SCORES_IN_PERIOD,
-        }
-
-        if os.path.exists(timecodes_file):
-            with open(timecodes_file, 'r+') as f:
-                try:
-                    existing_data = json.load(f)
-                except json.JSONDecodeError:
-                    print('FIXME')
-                    existing_data = []
-                existing_data.append(data)
-                f.seek(0)
-                json.dump(existing_data, f, indent=4)
-        else:
-            with open(timecodes_file, 'w') as f:
-                json.dump([data], f, indent=4)
+        with open(timecodes_file, 'w') as f:
+            json.dump(timecodes, f, indent=4)
