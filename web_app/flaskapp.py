@@ -191,7 +191,7 @@ def save_results():
 
 @app.route('/webapp')
 def webapp():
-    return Response(generate_frames(0), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(generate_frames([0]), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 if __name__ == "__main__":

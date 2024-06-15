@@ -8,42 +8,69 @@
     <title>Video</title>
     <link href="https://vjs.zencdn.net/7.11.4/video-js.css" rel="stylesheet" />
     <style>
-        body{
-            color:white;
-            margin:0px;
-            padding:0px;
+        body {
+            font-family: Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            color: gray;
         }
-        header.feature-box.top{
-        background-color:black;
-        height:100px;
-        margin:0px;
-        padding:20px;
-        text-align:center;
-        }
-        header.feature-box.second{
-        background-color:blue;
-        height:50px;
-        text-align:center;
-        margin-top:-25px;
-        }
-        .features{
-          background-color:black;
-          width: 900px;
-          height: 700px;
-          border-radius: 35px;
-          object-fit: contain;
-          margin:20px;
-        }
-        section.col-sm {
+
+        header.feature-box.top {
             background-color: black;
-            width: 1000px;
-            height: 650px;
+            color: white;
+            height: 120px;
+            padding: 5px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header.feature-box.top .header-title {
+            margin-left: 20px;
+        }
+
+        header.feature-box.top .home-button {
+            margin-right: 20px;
+            text-align: center;
+        }
+
+        header.feature-box.second {
+            height: 50px;
+            background-color: #ffffff;
+            margin-top: 0px;
+            text-align: center;
+        }
+
+        .features {
+            background: white;
+            width: 900px;
+            height: 700px;
             border-radius: 35px;
-            object-fit: contain;
-            margin: 40px;
+            margin: 20px auto;
             display: flex;
             justify-content: center;
             align-items: center;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-top: 40px;
+        }
+
+        section.col-sm {
+            background-color: white;
+            width: 900px;
+            height: 650px;
+            border-radius: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-right: 20px;
         }
 
         section.col-sm video {
@@ -52,45 +79,114 @@
             border-radius: 35px;
         }
 
-        {#.vjs-progress-control .vjs-progress-holder {#}
-        {#    background-color: transparent;#}
-        {#}#}
         .vjs-progress-control .vjs-play-progress {
             background-color: transparent;
         }
+
         .timecode {
             position: absolute;
             bottom: 0;
             height: 100%;
             cursor: pointer;
-            border-right: 2px solid black;
+            border-right: 2px solid #000;
             box-sizing: border-box;
         }
+
         .timecode.red {
-            background-color: red;
+            background-color: #e43f5a;
         }
+
         .timecode.green {
-            background-color: green;
+            background-color: #00bdaa;
         }
+
         .timecode.yellow {
-            background-color: yellow;
+            background-color: #f0a500;
         }
 
-        img{
-          width: 900px;
-          height: 600px;
-          border-radius: 35px;
-          object-fit: contain;
-          margin:40px;
+        img {
+            width: 900px;
+            height: 600px;
+            border-radius: 35px;
+            object-fit: contain;
+            margin: 40px auto;
         }
 
-        .new{
-        color:black;
-        margin:0px;
-        padding:10px;
-        background-color:green;
-        margin:0px;
-        margin-top:-10px;
+        .new {
+            color: gray;
+            margin: 0;
+            padding: 10px;
+            background-color: white;
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: gray;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .btn-primary {
+            background-color: #005fa9;
+        }
+
+        .btn-secondary {
+            background-color: #005fa9;
+        }
+
+        .btnCustom {
+            background-color: #00a603;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        #selectedFiles {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            color: gray;
+        }
+
+        footer {
+            background-color: black;
+            height: 25px;
+            text-align: center;
+            padding: 15px;
+            color: white;
+            margin-top: 30px;
+        }
+
+        footer a {
+            color: darkslateblue;
+            text-decoration: none;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            margin-left: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .download-button {
+            margin-top: 20px;
         }
 
     </style>
@@ -101,194 +197,193 @@
 </head>
 <body>
 <header class="feature-box top">
-    <h1><strong>Object Detection using YOLOv8</strong></h1>
+    <h1 class="header-title"><strong>Team FTTFTF</strong></h1>
+    <a href="/" class="btn home-button">Home</a>
+
+
 </header>
 <header class="feature-box second">
-     <h1><strong>Output Video</strong></h1>
+    <h1><strong>Object detection</strong></h1>
 </header>
 
-<section id="video-section" class="col-sm">
-     <img src="{{ url_for('frames') }}" alt="Upload video">
-</section>
-<section>
-    <div class="new">
-      <form method="POST" enctype="multipart/form-data">
-        {{ form.hidden_tag() }}
+<div class="container">
+    <section id="video-section" class="col-sm">
+        <img src="{{ url_for('frames') }}" alt="Upload video">
+    </section>
+    <div class="controls">
+        <section class="new">
+            <form method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
 
-        <div class="form-group">
-          <button type="button" id="selectFolderBtn" class="btn btn-primary">Выберите папку</button>
-            или
-          <button type="button" id="selectFilesBtn" class="btn btn-secondary">Выберите файлы</button>
-        </div>
+                <div class="form-group">
+                    <button type="button" id="selectFolderBtn" class="btn btn-primary">Выберите папку</button>
+                    или
+                    <button type="button" id="selectFilesBtn" class="btn btn-secondary">Выберите файлы</button>
+                </div>
 
-        <div class="form-group">
-          <input type="file" id="fileFolderInput" name="file_folder" class="hidden-input" hidden="hidden">
-          {% for error in form.file_folder.errors %}
-            <span style="color: yellow;">[{{ error }}]</span>
-          {% endfor %}
-        </div>
+                <div class="form-group">
+                    <input type="file" id="fileFolderInput" name="file_folder" class="hidden-input" hidden="hidden">
+                    {% for error in form.file_folder.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
 
-        <div class="form-group" id="ChoosedFiles" hidden="hidden">
-          <label for="selectedFiles">Выбранные файлы:</label>
-          <ul id="selectedFiles"></ul>
-        </div>
+                <div class="form-group" id="ChoosedFiles" hidden="hidden">
+                    <label for="selectedFiles">Выбранные файлы:</label>
+                    <ul id="selectedFiles"></ul>
+                </div>
 
-        <div class="form-group" id="SubmitFormBtn" hidden="hidden">
-          {{ form.submit(class="btn btn-primary") }}
-        </div>
-      </form>
+                <div class="form-group" id="SubmitFormBtn" hidden="hidden">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </section>
+
+        <section class="new download-button">
+            <form method="POST" action="{{ url_for('save_results') }}" style="align-content: center; text-align: center; display: flex;">
+                <div>
+                    <button type="submit" name="save" id="saveBtn" value="save" hidden="hidden" class="btnCustom">Скачать результаты</button>
+                </div>
+            </form>
+        </section>
     </div>
-</section>
-<section>
-    <div class="new">
-        <form method="POST" action="{{ url_for('save_results') }}" style="align-content: center; text-align: center;display: flex;">
-            <div>
-                <button type="submit" name="save" id="saveBtn" value="save" hidden="hidden" class="btnCustom">Скачать результаты</button>
-            </div>
-        </form>
-    </div>
-</section>
-    <script>
-      document.getElementById('selectFolderBtn').addEventListener('click', function() {
+</div>
+
+<footer>
+    <p>Leaders of digital transformation 2024<a href="https://github.com/bzzzzzu/lct24_drones" title="GitHub"> GitHub</a></p>
+</footer>
+
+<script>
+    document.getElementById('selectFolderBtn').addEventListener('click', function() {
         let input = document.getElementById('fileFolderInput');
         input.removeAttribute('multiple');
         input.setAttribute('webkitdirectory', 'webkitdirectory');
         input.click();
-      });
+    });
 
-      document.getElementById('selectFilesBtn').addEventListener('click', function() {
+    document.getElementById('selectFilesBtn').addEventListener('click', function() {
         let input = document.getElementById('fileFolderInput');
         input.removeAttribute('webkitdirectory');
         input.setAttribute('multiple', 'multiple');
         input.click();
-      });
+    });
 
-      document.getElementById('fileFolderInput').addEventListener('change', function(event) {
+    document.getElementById('fileFolderInput').addEventListener('change', function(event) {
         let input = event.target;
         let fileList = input.files;
         let selectedFilesList = document.getElementById('selectedFiles');
         selectedFilesList.innerHTML = '';
 
         for (let i = 0; i < fileList.length; i++) {
-          let li = document.createElement('li');
-          li.textContent = fileList[i].name;
-          selectedFilesList.appendChild(li);
+            let li = document.createElement('li');
+            li.textContent = fileList[i].name;
+            selectedFilesList.appendChild(li);
         }
 
         // Enable the submit button if files are selected
         if (fileList.length > 0) {
-          document.getElementById('SubmitFormBtn').removeAttribute('hidden');
-          document.getElementById('ChoosedFiles').removeAttribute('hidden');
+            document.getElementById('SubmitFormBtn').removeAttribute('hidden');
+            document.getElementById('ChoosedFiles').removeAttribute('hidden');
         } else {
-          document.getElementById('SubmitFormBtn').setAttribute('hidden', 'hidden');
-          document.getElementById('ChoosedFiles').setAttribute('hidden', 'hidden');
+            document.getElementById('SubmitFormBtn').setAttribute('hidden', 'hidden');
+            document.getElementById('ChoosedFiles').setAttribute('hidden', 'hidden');
         }
-      });
-    </script>
+    });
+</script>
+
 <script>
     $(document).ready(function() {
-            function checkVideoStatus() {
-                $.getJSON('/check_status', function(data) {
-                    if (data.status === 'ready') {
-                        document.getElementById("saveBtn").removeAttribute('hidden');
-                        if (data.type === 'video'){
-                            var videoSection = $('#video-section');
-                            videoSection.empty();
-                            videoSection.append('<video id="my-video" class="video-js vjs-default-skin" controls preload="auto" width="1000" height="650">' +
-                                                '<source src="/video/' + encodeURIComponent(data.result_file_path) + '" type="video/mp4">' +
-                                                '</video>');
+        function checkVideoStatus() {
+            $.getJSON('/check_status', function(data) {
+                if (data.status === 'ready') {
+                    document.getElementById("saveBtn").removeAttribute('hidden');
+                    if (data.type === 'video'){
+                        var videoSection = $('#video-section');
+                        videoSection.empty();
+                        videoSection.append('<video id="my-video" class="video-js vjs-default-skin" controls preload="auto" width="1000" height="650">' +
+                                            '<source src="/video/' + encodeURIComponent(data.result_file_path) + '" type="video/mp4">' +
+                                            '</video>');
 
-                            var player = videojs('my-video');
+                        var player = videojs('my-video');
 
-                            async function getTimecodes() {
-                                try {
-                                    const response = await fetch('/timecodes/' + encodeURIComponent(data.result_file_path), {
-                                        method: 'GET', // Метод запроса
-                                        headers: {
-                                            'Content-Type': 'application/json' // Установка типа содержимого
-                                        }
-                                    });
-
-                                    // Проверка успешности ответа
-                                    if (!response.ok) {
-                                        throw new Error(`HTTP error! Status: ${response.status}`);
+                        async function getTimecodes() {
+                            try {
+                                const response = await fetch('/timecodes/' + encodeURIComponent(data.result_file_path), {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-Type': 'application/json'
                                     }
-
-                                    // Преобразование ответа в JSON
-                                    const timecodes = await response.json();
-
-                                    // Логирование полученных таймкодов
-                                    console.log('Received timecodes:', timecodes);
-                                    return timecodes;
-                                } catch (error) {
-                                    console.error('Error fetching timecodes:', error);
-                                }
-                            }
-
-                            // Вызов функции для получения таймкодов
-                            var timecodes;
-
-                            function createTimecode(timecode) {
-                                var timecodeElem = document.createElement('div');
-                                timecodeElem.classList.add('timecode');
-                                timecodeElem.classList.add(timecode.color);
-
-                                var startPercent = (timecode.start_time / player.duration()) * 100;
-                                var endPercent = (timecode.end_time / player.duration()) * 100;
-                                timecodeElem.style.left = startPercent + '%';
-                                timecodeElem.style.width = (endPercent - startPercent) + '%';
-
-                                // Обработчик клика на таймкод
-                                timecodeElem.addEventListener('click', function(event) {
-                                    player.currentTime(timecode.start_time);
                                 });
 
-                                return timecodeElem;
-                            }
-
-                            // Функция для закраски прогресс-бара в соответствии с таймкодами
-                            function colorizeProgressBar() {
-                                var progressBar = player.controlBar.progressControl.seekBar.el();
-
-                                // Очистка предыдущих таймкодов
-                                var existingTimecodes = progressBar.querySelectorAll('.timecode');
-                                existingTimecodes.forEach(function(timecode) {
-                                    timecode.remove();
-                                });
-
-                                // Создание таймкодов на прогресс-баре
-                                for (var i = 0; i < timecodes.length; i++) {
-                                    var timecode = timecodes[i];
-                                    console.log(timecode);
-                                    var timecodeElem = createTimecode(timecode);
-                                    timecodeElem.dataset.timeStart = timecode.start_time; // Сохраняем время начала таймкода в data-атрибуте
-                                    progressBar.appendChild(timecodeElem);
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! Status: ${response.status}`);
                                 }
+
+                                const timecodes = await response.json();
+                                console.log('Received timecodes:', timecodes);
+                                return timecodes;
+                            } catch (error) {
+                                console.error('Error fetching timecodes:', error);
                             }
-
-                            player.on('loadedmetadata', async function() {
-                                 timecodes = await getTimecodes();
-                                 colorizeProgressBar();
-                           });
-                        }
-                        else if (data.type === 'image'){
-
-                            var videoSection = $('#video-section');
-                            videoSection.empty();
-                            videoSection.append('<img src="/image/' + encodeURIComponent(data.result_file_path) + '" alt="Upload video">');
                         }
 
-                    } else {
-                        document.getElementById("saveBtn").setAttribute('hidden', 'hidden');
-                        setTimeout(checkVideoStatus, 1000);  // Check status every second
+                        var timecodes;
+
+                        function createTimecode(timecode) {
+                            var timecodeElem = document.createElement('div');
+                            timecodeElem.classList.add('timecode');
+                            timecodeElem.classList.add(timecode.color);
+
+                            var startPercent = (timecode.start_time / player.duration()) * 100;
+                            var endPercent = (timecode.end_time / player.duration()) * 100;
+                            timecodeElem.style.left = startPercent + '%';
+                            timecodeElem.style.width = (endPercent - startPercent) + '%';
+
+                            timecodeElem.addEventListener('click', function(event) {
+                                player.currentTime(timecode.start_time);
+                            });
+
+                            return timecodeElem;
+                        }
+
+                        function colorizeProgressBar() {
+                            var progressBar = player.controlBar.progressControl.seekBar.el();
+
+                            var existingTimecodes = progressBar.querySelectorAll('.timecode');
+                            existingTimecodes.forEach(function(timecode) {
+                                timecode.remove();
+                            });
+
+                            for (var i = 0; i < timecodes.length; i++) {
+                                var timecode = timecodes[i];
+                                console.log(timecode);
+                                var timecodeElem = createTimecode(timecode);
+                                timecodeElem.dataset.timeStart = timecode.start_time;
+                                progressBar.appendChild(timecodeElem);
+                            }
+                        }
+
+                        player.on('loadedmetadata', async function() {
+                            timecodes = await getTimecodes();
+                            colorizeProgressBar();
+                        });
                     }
-                }).fail(function() {
-                    console.error('Failed to load video status');
-                });
-            }
+                    else if (data.type === 'image'){
+                        var videoSection = $('#video-section');
+                        videoSection.empty();
+                        videoSection.append('<img src="/image/' + encodeURIComponent(data.result_file_path) + '" alt="Upload video">');
+                    }
+                } else {
+                    document.getElementById("saveBtn").setAttribute('hidden', 'hidden');
+                    setTimeout(checkVideoStatus, 1000);
+                }
+            }).fail(function() {
+                console.error('Failed to load video status');
+            });
+        }
 
-            checkVideoStatus();  // Start checking video status when the document is ready
-        });
+        checkVideoStatus();
+    });
 </script>
 </body>
 </html>
