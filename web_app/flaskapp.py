@@ -20,7 +20,6 @@ import cv2
 from values import VIDEO_EXTENSIONS, IMG_EXTENSIONS
 from yolo_detect import YoloModel
 
-
 app = Flask(__name__)
 local_yolo = YoloModel()
 app.config["SESSION_PERMANENT"] = False
@@ -39,17 +38,19 @@ class FileFolderForm(FlaskForm):
 
 
 def generate_frames(path_x: List[Union[str, int]]):
-    """Функция получения объкета генератора и отправки каждого фрейма в шаблон."""
-    print(f'INFO: {path_x=}')
-    current_datetime = str(datetime.now())
+    """Функция получения объкета генератора фреймов и отправки каждого фрейма в шаблон."""
+    current_datetime = f'link_{str(datetime.now())}'
     for path_ in path_x:
         yolo_output = local_yolo.video_detection(path_, current_datetime)  # return generator
 
-        for detection_ in yolo_output:
-            ref, buffer = cv2.imencode('.jpg', detection_)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        if yolo_output is not None:
+            for detection_ in yolo_output:
+                ref, buffer = cv2.imencode('.jpg', detection_)
+                frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        else:
+            return jsonify({"error": f"{path_} cannot be loaded"}), 400
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -68,6 +69,7 @@ def webcam():
 @app.route('/FrontPage', methods=['GET', 'POST'])
 def front():
     form = FileFolderForm()
+    video_link = request.form.get('video_link', None)
 
     def process_file(file=None, filename=None, folder=None):
         """Функция сохранения полученного файла."""
@@ -103,7 +105,11 @@ def front():
 
         session['result_file_path'] = result_file_path
 
-    if form.validate_on_submit():
+
+    if video_link is not None:
+        session['video_paths'] = [video_link]
+
+    elif form.validate_on_submit():
         session['results_file_names'] = None
         session['video_paths'] = None
         session['result_file_path'] = None
@@ -214,7 +220,8 @@ def save_video_and_labels():
 
 @app.route('/webapp')
 def webapp():
-    return Response(generate_frames([0]), mimetype='multipart/x-mixed-replace; boundary=frame')
+    frame = generate_frames([0])
+    return Response(frame, mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 if __name__ == "__main__":

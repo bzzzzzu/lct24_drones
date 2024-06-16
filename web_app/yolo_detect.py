@@ -14,6 +14,7 @@ import cv2
 from PIL import Image
 from werkzeug.utils import secure_filename
 import tempfile
+import yt_dlp as youtube_dl
 
 from values import VIDEO_EXTENSIONS, IMG_EXTENSIONS
 
@@ -64,7 +65,7 @@ class YoloModel:
 
     def detect(self,
                source,
-               batch: int = 16,
+               batch: int = 24,
                stream: bool = False,
                stream_buffer: bool = False,
                save: bool = True,
@@ -176,11 +177,10 @@ class YoloModel:
         print(f'INFO: {path_x=}')
 
         if isinstance(path_x, str):
-            filename = os.path.basename(path_x)
-            dirname, _ = os.path.splitext(filename)
-
             # image
             if path_x.lower().endswith(IMG_EXTENSIONS):
+                filename = os.path.basename(path_x)
+                dirname, _ = os.path.splitext(filename)
                 results = self.detect(source=path_x, stream=True, stream_buffer=False,
                                       project=f'./uploads/{dirname}/', name='results')
                 for frame in results:
@@ -188,6 +188,8 @@ class YoloModel:
 
             # video
             elif path_x.lower().endswith(VIDEO_EXTENSIONS):
+                filename = os.path.basename(path_x)
+                dirname, _ = os.path.splitext(filename)
                 with tempfile.TemporaryDirectory() as temp_dir:
                     temp_output_path = os.path.join(temp_dir, filename)
 
@@ -240,10 +242,71 @@ class YoloModel:
 
             # link
             elif 'http' in path_x:
-                pass
+                ydl_opts = {
+                    "quiet": True,
+                    "no_warnings": True,
+                    "format": "best",
+                    "forceurl": True,
+                }
+
+                ydl = youtube_dl.YoutubeDL(ydl_opts)
+                # Extract the video URL
+                info = ydl.extract_info(path_x, download=False)
+                url = info["url"]
+
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    temp_output_path = os.path.join(temp_dir, current_datetime)
+
+                    cap = cv2.VideoCapture(url)
+                    if not cap.isOpened():
+                        print(f"Error: Unable to open video file {url}")
+                        return
+
+                    fps = cap.get(cv2.CAP_PROP_FPS)
+                    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    fourcc = cv2.VideoWriter_fourcc(*'H264')  # Кодек для MP4
+
+                    out = cv2.VideoWriter(temp_output_path, fourcc, fps, (width, height))
+                    results = self.detect(source=path_x, stream=True, stream_buffer=True,
+                                          save=False, save_txt=True, save_conf=True,
+                                          project=f'./uploads/{current_datetime}/',
+                                          name='results')
+
+                    frame_cnt = 0
+                    for result in results:
+                        ret, frame = cap.read()
+                        if not ret:
+                            break
+
+                        frame_cnt += 1
+                        current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                        timecode_artifacts = [frame_cnt, current_time, current_datetime]
+
+                        processed_frame = self.process_frame(frame, [result], timecode_artifacts)
+                        out.write(processed_frame)
+
+                        yield processed_frame
+
+                    # Освобождаем ресурсы
+                    cap.release()
+                    out.release()
+                    cv2.destroyAllWindows()
+                    timecodes = self.process_timecodes(TIMEPOINTS)
+                    self.save_timecodes(timecodes, current_datetime)
+
+                    TIMEPOINTS = []
+
+                    # Перемещаем временное видео в папку results
+                    new_dir = os.path.join('./uploads', current_datetime, 'results')
+                    os.makedirs(new_dir, exist_ok=True)
+                    final_output_path = os.path.join(new_dir, current_datetime)
+                    shutil.move(temp_output_path, final_output_path)
 
             # folder
             else:
+                filename = os.path.basename(path_x)
+                dirname, _ = os.path.splitext(filename)
                 if os.path.isdir(path_x):
                     for filename in os.listdir(path_x):
                         path_to_file = os.path.join(path_x, filename)

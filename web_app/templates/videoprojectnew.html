@@ -19,7 +19,7 @@
         header.feature-box.top {
             background-color: black;
             color: white;
-            height: 85px;
+            height: 120px;
             padding: 5px;
             text-align: left;
             display: flex;
@@ -210,12 +210,7 @@
 <header class="feature-box top">
     <h1 class="header-title"><strong>Team FTTFTF | Object detection</strong></h1>
     <a href="/" class="btn home-button">Home</a>
-
-
 </header>
-{#<header class="feature-box second">#}
-{#    <h1><strong>Object detection</strong></h1>#}
-{#</header>#}
 
 <div class="container">
     <section id="video-section" class="col-sm">
@@ -246,6 +241,19 @@
 
                 <div class="form-group" id="SubmitFormBtn" hidden="hidden">
                     {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </section>
+        <section class="new">
+            <p>или введите ссылку на видео</p>
+            <form method="POST" action="{{ url_for('front') }}">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    <label for="videoLink"></label>
+                    <input type="url" id="videoLink" name="video_link" class="form-control" placeholder="https://example.com/video.mp4" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Загрузить видео по ссылке</button>
                 </div>
             </form>
         </section>
