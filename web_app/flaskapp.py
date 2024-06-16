@@ -1,6 +1,11 @@
-import json
+import os
 import time
-from typing import List
+from datetime import datetime
+from typing import List, Union
+import tempfile
+import json
+import shutil
+from threading import Thread
 
 from flask import Flask, render_template, Response, jsonify, request, session, send_file
 from flask_wtf import FlaskForm
@@ -9,15 +14,12 @@ from wtforms import MultipleFileField, SubmitField
 from werkzeug.utils import secure_filename
 from wtforms.fields.simple import StringField, FileField
 from wtforms.validators import InputRequired, ValidationError, DataRequired
-import os
+
 import cv2
-from threading import Thread
 
 from values import VIDEO_EXTENSIONS, IMG_EXTENSIONS
 from yolo_detect import YoloModel
-import shutil
-from datetime import datetime
-import tempfile
+
 
 app = Flask(__name__)
 local_yolo = YoloModel()
@@ -31,11 +33,13 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
 class FileFolderForm(FlaskForm):
+    """Класс формы загрузки файлов и папки."""
     file_folder = FileField('Select Files or Folder', validators=[DataRequired()])
     submit = SubmitField('Обработать')
 
 
-def generate_frames(path_x: List[str]):
+def generate_frames(path_x: List[Union[str, int]]):
+    """Функция получения объкета генератора и отправки каждого фрейма в шаблон."""
     print(f'INFO: {path_x=}')
     current_datetime = str(datetime.now())
     for path_ in path_x:
@@ -66,6 +70,7 @@ def front():
     form = FileFolderForm()
 
     def process_file(file=None, filename=None, folder=None):
+        """Функция сохранения полученного файла."""
         if not filename:
             filename = secure_filename(file.filename)
         if folder:
@@ -124,7 +129,6 @@ def front():
 @app.route('/frames')
 def frames():
     video_paths = session.get('video_paths', None)
-
     if video_paths:
         frame = generate_frames(video_paths)
         return Response(frame, mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -133,6 +137,7 @@ def frames():
 
 @app.route('/timecodes/<path:result_file_path>')
 def timecodes(result_file_path):
+    """Функция загрузки файла с таймкодами."""
     timecodes_path = result_file_path.replace("results", "timecodes")
     timecodes_path = ".".join(timecodes_path.split(".")[:-1]) + ".json"
     if timecodes_path and os.path.exists(timecodes_path):
@@ -144,6 +149,7 @@ def timecodes(result_file_path):
 
 @app.route('/check_status')
 def check_status():
+    """Функция проверки готовности файла с таймкодами и отправка пути обработанного файла."""
     result_file_path = session.get('result_file_path', None)
 
     if result_file_path and result_file_path.endswith(VIDEO_EXTENSIONS):

@@ -1,18 +1,16 @@
-import json
-import math
 import os
-import shutil
+from pathlib import Path
 import time
 from datetime import datetime
+import json
+import shutil
 from collections import Counter
-
 import yaml
-from pathlib import Path
 from typing import Union, Dict, List
 
+import torch
 from ultralytics import YOLO
 import cv2
-import torch
 from PIL import Image
 from werkzeug.utils import secure_filename
 import tempfile
@@ -35,6 +33,7 @@ LA = ["plane", "heli"]
 
 
 class YoloModel:
+    """Класс инференса модели."""
     def __init__(
             self,
             # model_path: str = f"http://triton:8000/yolo/",  # из контейнера
@@ -89,6 +88,7 @@ class YoloModel:
 
     @staticmethod
     def _load_config(filepath: str):
+        """Метод загрузки конфига."""
         if os.path.exists(filepath):
             with open(filepath, 'r') as f:
                 return yaml.safe_load(f)
@@ -96,7 +96,7 @@ class YoloModel:
 
     @staticmethod
     def process_timecodes(timecodes, min_interval=0.6, merge_gap=0.02):
-
+        """Метод определения самых важных таймкодов."""
         def get_most_common_label(labels):
             if not labels:
                 return None
@@ -133,7 +133,6 @@ class YoloModel:
                     current_labels = []
                     last_detection_time = None
 
-        # Final check for the last interval if the loop ends while still in an interval
         if start_time is not None and (end_time - start_time >= min_interval):
             most_common_label = get_most_common_label(current_labels)
             if most_common_label:
