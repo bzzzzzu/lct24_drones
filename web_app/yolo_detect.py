@@ -7,6 +7,7 @@ import shutil
 from collections import Counter
 import yaml
 from typing import Union, Dict, List
+import re
 
 import torch
 from ultralytics import YOLO
@@ -15,6 +16,7 @@ from PIL import Image
 from werkzeug.utils import secure_filename
 import tempfile
 import yt_dlp as youtube_dl
+from pytube import YouTube, exceptions
 
 from values import VIDEO_EXTENSIONS, IMG_EXTENSIONS
 
@@ -96,7 +98,7 @@ class YoloModel:
         return None
 
     @staticmethod
-    def process_timecodes(timecodes, min_interval=0.6, merge_gap=0.02):
+    def process_timecodes(timecodes, min_interval=0.2, merge_gap=0.02):
         """Метод определения самых важных таймкодов."""
         def get_most_common_label(labels):
             if not labels:
@@ -177,7 +179,7 @@ class YoloModel:
         print(f'INFO: {path_x=}')
 
         if isinstance(path_x, str):
-            # image
+            # IMAGE
             if path_x.lower().endswith(IMG_EXTENSIONS):
                 filename = os.path.basename(path_x)
                 dirname, _ = os.path.splitext(filename)
@@ -186,7 +188,7 @@ class YoloModel:
                 for frame in results:
                     yield self.process_frame(frame.orig_img, [frame])
 
-            # video
+            # VIDEO
             elif path_x.lower().endswith(VIDEO_EXTENSIONS):
                 filename = os.path.basename(path_x)
                 dirname, _ = os.path.splitext(filename)
@@ -204,7 +206,7 @@ class YoloModel:
                     fourcc = cv2.VideoWriter_fourcc(*'H264')  # Кодек для MP4
 
                     out = cv2.VideoWriter(temp_output_path, fourcc, fps, (width, height))
-                    results = self.detect(source=path_x, stream=True, stream_buffer=False,
+                    results = self.detect(source=path_x, stream=True, stream_buffer=True,
                                           save=False, save_txt=True, save_conf=True,
                                           project=f'./uploads/{dirname}/',
                                           name='results')
@@ -224,7 +226,6 @@ class YoloModel:
 
                         yield processed_frame
 
-                    # Освобождаем ресурсы
                     cap.release()
                     out.release()
                     cv2.destroyAllWindows()
@@ -232,7 +233,6 @@ class YoloModel:
                     self.save_timecodes(timecodes, dirname)
 
                     TIMEPOINTS = []
-
                     # Перемещаем временное видео в папку results
                     new_dir = os.path.join('./uploads', dirname, 'results')
                     os.makedirs(new_dir, exist_ok=True)
@@ -240,8 +240,8 @@ class YoloModel:
                     shutil.move(temp_output_path, final_output_path)
 
 
-            # link
-            elif 'http' in path_x:
+            # LINK
+            elif self.is_url(path_x):
                 ydl_opts = {
                     "quiet": True,
                     "no_warnings": True,
@@ -250,25 +250,20 @@ class YoloModel:
                 }
 
                 ydl = youtube_dl.YoutubeDL(ydl_opts)
-                # Extract the video URL
                 info = ydl.extract_info(path_x, download=False)
                 url = info["url"]
 
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    temp_output_path = os.path.join(temp_dir, current_datetime)
+                    temp_output_path = os.path.join(temp_dir, f"{current_datetime}.mp4")
 
                     cap = cv2.VideoCapture(url)
-                    if not cap.isOpened():
-                        print(f"Error: Unable to open video file {url}")
-                        return
-
                     fps = cap.get(cv2.CAP_PROP_FPS)
                     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                     fourcc = cv2.VideoWriter_fourcc(*'H264')  # Кодек для MP4
 
                     out = cv2.VideoWriter(temp_output_path, fourcc, fps, (width, height))
-                    results = self.detect(source=path_x, stream=True, stream_buffer=True,
+                    results = self.detect(source=url, stream=True, stream_buffer=True,
                                           save=False, save_txt=True, save_conf=True,
                                           project=f'./uploads/{current_datetime}/',
                                           name='results')
@@ -288,7 +283,6 @@ class YoloModel:
 
                         yield processed_frame
 
-                    # Освобождаем ресурсы
                     cap.release()
                     out.release()
                     cv2.destroyAllWindows()
@@ -296,14 +290,12 @@ class YoloModel:
                     self.save_timecodes(timecodes, current_datetime)
 
                     TIMEPOINTS = []
-
-                    # Перемещаем временное видео в папку results
                     new_dir = os.path.join('./uploads', current_datetime, 'results')
                     os.makedirs(new_dir, exist_ok=True)
-                    final_output_path = os.path.join(new_dir, current_datetime)
+                    final_output_path = os.path.join(new_dir, f"{current_datetime}.mp4")
                     shutil.move(temp_output_path, final_output_path)
 
-            # folder
+            # FOLDER
             else:
                 filename = os.path.basename(path_x)
                 dirname, _ = os.path.splitext(filename)
@@ -325,7 +317,7 @@ class YoloModel:
                             fourcc = cv2.VideoWriter_fourcc(*'H264')  # Кодек для MP4
 
                             out = cv2.VideoWriter(temp_output_path, fourcc, fps, (width, height))
-                            results = self.detect(source=path_to_file, stream=True, stream_buffer=False,
+                            results = self.detect(source=path_to_file, stream=True, stream_buffer=True,
                                                   save=False, save_txt=True, save_conf=True,
                                                   project=f'./uploads/{dirname}/',
                                                   name='results')
@@ -358,7 +350,7 @@ class YoloModel:
                             shutil.move(temp_output_path, final_output_path)
 
 
-        # stream
+        # WEBCAM
         # 172.21.0.1 - - [14/Jun/2024 23:35:00] "GET /webcam HTTP/1.1" 200 -
         # flask-1   | [ WARN:0@1.416] global cap_v4l.cpp:999 open VIDEOIO(V4L2:/dev/video0): can't open camera by index
         # flask-1   | [ WARN:0@1.416] global cap.cpp:342 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by index
@@ -403,3 +395,14 @@ class YoloModel:
 
         with open(timecodes_file, 'w') as f:
             json.dump(timecodes, f, indent=4)
+    @staticmethod
+    def is_url(path):
+        url_regex = re.compile(
+            r'^(?:http|ftp)s?://'  # http:// или https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # доменные имена
+            r'localhost|'  # localhost
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'  # IPv4 адрес
+            r'\[?[A-F0-9]*:[A-F0-9:]+\]?)'  # IPv6 адрес
+            r'(?::\d+)?'  # опциональный порт
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        return re.match(url_regex, path) is not None

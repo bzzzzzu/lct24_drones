@@ -29,6 +29,7 @@ Session(app)
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+CURRENT_DATETIME = None
 
 
 class FileFolderForm(FlaskForm):
@@ -39,9 +40,10 @@ class FileFolderForm(FlaskForm):
 
 def generate_frames(path_x: List[Union[str, int]]):
     """Функция получения объкета генератора фреймов и отправки каждого фрейма в шаблон."""
-    current_datetime = f'link_{str(datetime.now())}'
+    global CURRENT_DATETIME
+    CURRENT_DATETIME = f"link_{datetime.now().strftime('%Y_%m_%d_%H%M%S_%f')}"
     for path_ in path_x:
-        yolo_output = local_yolo.video_detection(path_, current_datetime)  # return generator
+        yolo_output = local_yolo.video_detection(path_, CURRENT_DATETIME)  # return generator
 
         if yolo_output is not None:
             for detection_ in yolo_output:
@@ -157,6 +159,10 @@ def timecodes(result_file_path):
 def check_status():
     """Функция проверки готовности файла с таймкодами и отправка пути обработанного файла."""
     result_file_path = session.get('result_file_path', None)
+
+    if result_file_path is None:
+        result_file_path = os.path.join(app.config['UPLOAD_FOLDER'], CURRENT_DATETIME, 'results', f'{CURRENT_DATETIME}.mp4')
+        session['results_file_names'] = [result_file_path]
 
     if result_file_path and result_file_path.endswith(VIDEO_EXTENSIONS):
         timecode_file_path = result_file_path.replace('/results/', '/timecodes/')
