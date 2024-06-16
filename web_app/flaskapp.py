@@ -11,6 +11,7 @@ from flask import Flask, render_template, Response, jsonify, request, session, s
 from flask_wtf import FlaskForm
 from flask_session import Session
 from wtforms import MultipleFileField, SubmitField
+from werkzeug import Request
 from werkzeug.utils import secure_filename
 from wtforms.fields.simple import StringField, FileField
 from wtforms.validators import InputRequired, ValidationError, DataRequired
@@ -24,12 +25,14 @@ app = Flask(__name__)
 local_yolo = YoloModel()
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
+app.config['MAX_CONTENT_LENGTH'] = 8192 * 1000 * 1000  # 8192 МБ максимальный объем содержимого (default 16 МБ)
+Request.max_form_parts = 10000  # Количество переменных, загружаемых в форму
 Session(app)
 
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-CURRENT_DATETIME = None
+CURRENT_DATETIME = ''
 
 
 class FileFolderForm(FlaskForm):
