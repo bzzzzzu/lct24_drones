@@ -162,7 +162,7 @@ def check_status():
 
     if result_file_path is None:
         result_file_path = os.path.join(app.config['UPLOAD_FOLDER'], CURRENT_DATETIME, 'results', f'{CURRENT_DATETIME}.mp4')
-        session['results_file_names'] = [result_file_path]
+        session['results_file_names'] = [CURRENT_DATETIME]
 
     if result_file_path and result_file_path.endswith(VIDEO_EXTENSIONS):
         timecode_file_path = result_file_path.replace('/results/', '/timecodes/')
