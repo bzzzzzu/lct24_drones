@@ -172,8 +172,25 @@ def image(result_file_path):
     return jsonify({"error": "No image found"}), 404
 
 
-@app.route('/save_results', methods=['POST'])
-def save_results():
+@app.route('/save_labels', methods=['POST'])
+def save_labels():
+    results_video_names = session['results_file_names']
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_common_folder_path = os.path.join(temp_dir, "common")
+        for filename in results_video_names:
+            dir_name, _ = os.path.splitext(filename)
+            folder_path = os.path.join(app.config['UPLOAD_FOLDER'], dir_name, 'results', 'labels')
+
+            temp_folder_path = os.path.join(temp_common_folder_path, dir_name)
+            shutil.copytree(folder_path, temp_folder_path)
+        shutil.make_archive(base_name=temp_common_folder_path, format='zip', root_dir=temp_common_folder_path)
+        return send_file(path_or_file=temp_common_folder_path + ".zip", as_attachment=True)
+
+    return jsonify({"error": "No video path in session"}), 400
+
+
+@app.route('/save_video_and_labels', methods=['POST'])
+def save_video_and_labels():
     results_video_names = session['results_file_names']
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_common_folder_path = os.path.join(temp_dir, "common")

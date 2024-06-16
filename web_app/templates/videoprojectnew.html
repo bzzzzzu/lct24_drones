@@ -19,7 +19,7 @@
         header.feature-box.top {
             background-color: black;
             color: white;
-            height: 120px;
+            height: 85px;
             padding: 5px;
             text-align: left;
             display: flex;
@@ -168,6 +168,11 @@
             padding: 15px;
             color: white;
             margin-top: 30px;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
         }
 
         footer a {
@@ -187,6 +192,12 @@
 
         .download-button {
             margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .download-button form {
+            margin-left: 10px;
         }
 
     </style>
@@ -197,14 +208,14 @@
 </head>
 <body>
 <header class="feature-box top">
-    <h1 class="header-title"><strong>Team FTTFTF</strong></h1>
+    <h1 class="header-title"><strong>Team FTTFTF | Object detection</strong></h1>
     <a href="/" class="btn home-button">Home</a>
 
 
 </header>
-<header class="feature-box second">
-    <h1><strong>Object detection</strong></h1>
-</header>
+{#<header class="feature-box second">#}
+{#    <h1><strong>Object detection</strong></h1>#}
+{#</header>#}
 
 <div class="container">
     <section id="video-section" class="col-sm">
@@ -240,10 +251,11 @@
         </section>
 
         <section class="new download-button">
-            <form method="POST" action="{{ url_for('save_results') }}" style="align-content: center; text-align: center; display: flex;">
-                <div>
-                    <button type="submit" name="save" id="saveBtn" value="save" hidden="hidden" class="btnCustom">Скачать результаты</button>
-                </div>
+            <form method="POST" action="{{ url_for('save_labels') }}" style="align-content: center; text-align: center;">
+                <button type="submit" name="save" id="saveBtn" value="save" hidden="hidden" class="btnCustom">Download labels</button>
+            </form>
+            <form method="POST" action="{{ url_for('save_video_and_labels') }}" style="align-content: center; text-align: center; margin-left: 10px;">
+                <button type="submit" name="save" id="saveBtnVideo" value="save" hidden="hidden" class="btnCustom">Download video and labels</button>
             </form>
         </section>
     </div>
@@ -297,6 +309,7 @@
             $.getJSON('/check_status', function(data) {
                 if (data.status === 'ready') {
                     document.getElementById("saveBtn").removeAttribute('hidden');
+                    document.getElementById("saveBtnVideo").removeAttribute('hidden');
                     if (data.type === 'video'){
                         var videoSection = $('#video-section');
                         videoSection.empty();
@@ -375,6 +388,7 @@
                     }
                 } else {
                     document.getElementById("saveBtn").setAttribute('hidden', 'hidden');
+                    document.getElementById("saveBtnVideo").setAttribute('hidden', 'hidden');
                     setTimeout(checkVideoStatus, 1000);
                 }
             }).fail(function() {
