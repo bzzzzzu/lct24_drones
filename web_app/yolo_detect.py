@@ -15,8 +15,8 @@ import cv2
 from PIL import Image
 from werkzeug.utils import secure_filename
 import tempfile
-import yt_dlp as youtube_dl
-from pytube import YouTube, exceptions
+# import yt_dlp as youtube_dl
+# from pytube import YouTube, exceptions
 
 from values import VIDEO_EXTENSIONS, IMG_EXTENSIONS
 
@@ -242,6 +242,10 @@ class YoloModel:
 
             # LINK
             elif self.is_url(path_x):
+                pass
+
+                # Критический баг, временно выключено
+                '''
                 ydl_opts = {
                     "quiet": True,
                     "no_warnings": True,
@@ -294,6 +298,7 @@ class YoloModel:
                     os.makedirs(new_dir, exist_ok=True)
                     final_output_path = os.path.join(new_dir, f"{current_datetime}.mp4")
                     shutil.move(temp_output_path, final_output_path)
+                '''
 
             # FOLDER
             else:

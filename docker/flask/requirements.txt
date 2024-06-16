@@ -5,6 +5,4 @@ ultralytics
 tritonclient[all]
 flask-socketio
 flask_session
-yt_dlp
-pytube
 # opencv-python
